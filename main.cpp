@@ -1,59 +1,137 @@
 ﻿#include <raylib.h>
-#include <vector>
 #include <string>
-using namespace std;
+#include <vector>
+#include <map>
+#include <memory>
+#include "raymath.h"
 
-// 全局纹理（存储各地块图片）
-Texture2D textures[6]; // 顺序：0-普通,1-墙,2-草地,3-熔岩,4-起点,5-终点
-const int TILE_SIZE = 32; // 每个地块尺寸（像素）
+// 迷宫相关常量
+const int TILE_WIDTH = 48;
+const int TILE_HEIGHT = 48;
+const int MAX_SCREEN_WIDTH = 1920;
+const int MAX_SCREEN_HEIGHT = 1080;
 
-// 加载所有纹理资源
-void LoadMazeTextures() {
-    // 加载图片→转换为纹理→释放图片内存
-    Image img;
-    // 普通地面（0）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/floor.png");
-    textures[0] = LoadTextureFromImage(img);
-    UnloadImage(img);
-    // 墙（1）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/wall.png");
-    textures[1] = LoadTextureFromImage(img);
-    UnloadImage(img);
-    // 草地（2）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/grass.png");
-    textures[2] = LoadTextureFromImage(img);
-    UnloadImage(img);
-    // 熔岩（3）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/lava.png");
-    textures[3] = LoadTextureFromImage(img);
-    UnloadImage(img);
-    // 起点（4）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/start.png");
-    textures[4] = LoadTextureFromImage(img);
-    UnloadImage(img);
-    // 终点（5）
-    img = LoadImage("D:/数据结构/迷宫小游戏/1/resources/end.png");
-    textures[5] = LoadTextureFromImage(img);
-    UnloadImage(img);
-}
+// 游戏状态枚举
+enum class GameState {
+    MENU,
+    RANDOM_MAZE_SELECT,
+    GAME_PLAYING,
+    GAME_OVER
+};
 
+// 游戏结束选项枚举
+enum class GameOverOption {
+    REPLAY,
+    MENU,
+    EXIT
+};
+
+// 地块类型枚举
+enum class TileType {
+    END = -2,
+    START = -1,
+    FLOOR = 0,
+    WALL = 1,
+    GRASS = 2,
+    LAVA = 3
+};
+
+// 路径类型枚举
+enum class PathType {
+    NONE,
+    DFS,
+    BFS,
+    DIJKSTRA
+};
+
+// 坐标结构体
+struct Coordinate {
+    int x, y;
+    bool operator==(const Coordinate& other) const {
+        return x == other.x && y == other.y;
+    }
+};
+
+// 坐标哈希函数（用于后续容器）
+template<> struct std::hash<Coordinate> {
+    size_t operator()(const Coordinate& c) const {
+        return hash<int>()(c.x) ^ (hash<int>()(c.y) << 1);
+    }
+};
+
+// Maze类框架（未实现核心功能）
+class Maze {
+private:
+    struct Tile {
+        TileType type;
+        Vector2 position;
+    };
+    std::map<TileType, Texture2D> textures;
+    std::vector<std::vector<Tile>> tiles;
+    Coordinate start_coord;
+    Coordinate end_coord;
+    int rows;
+    int cols;
+public:
+    Maze(const std::string& filepath) {} // 从文件加载构造
+    Maze(int rows, int cols) {} // 随机生成构造
+    ~Maze() {}
+    void draw(const Camera2D& camera) {}
+    void set_current_path(PathType type) {}
+    Coordinate get_start_coord() const { return start_coord; }
+    Coordinate get_end_coord() const { return end_coord; }
+    TileType get_tile_type(const Coordinate& coord) const { return TileType::WALL; }
+    Vector2 get_tile_position(const Coordinate& coord) const { return { 0, 0 }; }
+    int get_rows() const { return rows; }
+    int get_cols() const { return cols; }
+};
+
+// Player类框架（未实现核心功能）
+class Player {
+private:
+    const Maze& maze;
+public:
+    Player(const Maze& maze_ref) : maze(maze_ref) {}
+    ~Player() {}
+    void update() {}
+    void draw(const Camera2D& camera) {}
+    int get_score() const { return 0; }
+    bool is_win_state() const { return false; }
+    bool is_dead_state() const { return false; }
+    void reset() {}
+};
+
+// 主函数：窗口初始化
 int main() {
-    // 初始化窗口（先临时设为320x320，后续根据迷宫尺寸调整）
-    InitWindow(800, 600, "迷宫小游戏 - 基础任务1");
-    LoadMazeTextures();  // 加载资源
+    // 初始化窗口（可调整大小）
+    InitWindow(1280, 720, "Maze Game");
+    SetWindowState(FLAG_WINDOW_RESIZABLE);
+    SetTargetFPS(60);
 
+    // 游戏状态初始化
+    GameState current_state = GameState::MENU;
+    std::unique_ptr<Maze> maze = nullptr;
+    std::unique_ptr<Player> player = nullptr;
+    Camera2D camera = { 0 };
+
+    // 主循环
     while (!WindowShouldClose()) {
+        // 绘制逻辑
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        // 绘制单个普通地面+墙+起点示例（验证资源加载）
-        DrawTexture(textures[0], 0, 0, WHITE);       // 普通地面（0,0）
-        DrawTexture(textures[1], TILE_SIZE, 0, WHITE); // 墙（32,0）
-        DrawTexture(textures[4], 0, TILE_SIZE, WHITE); // 起点（0,32）
+
+        // 菜单界面（仅显示文字）
+        if (current_state == GameState::MENU) {
+            DrawText("MAZE GAME", GetScreenWidth() / 2 - MeasureText("MAZE GAME", 60) / 2, 100, 60, BLACK);
+            DrawText("Press SPACE to start with custom maze", GetScreenWidth() / 2 - MeasureText("Press SPACE to start with custom maze", 30) / 2, 250, 30, BLACK);
+            DrawText("Press Z to select random maze", GetScreenWidth() / 2 - MeasureText("Press Z to select random maze", 30) / 2, 300, 30, BLACK);
+            DrawText("Press ESC to exit", GetScreenWidth() / 2 - MeasureText("Press ESC to exit", 30) / 2, 350, 30, BLACK);
+        }
+
         EndDrawing();
     }
 
     // 释放资源
-    for (int i = 0; i < 6; i++) UnloadTexture(textures[i]);
     CloseWindow();
     return 0;
 }

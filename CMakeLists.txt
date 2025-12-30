@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # 2. 定义项目名（可自定义，如"RaylibTest"）和使用的语言（CXX即C++）
-project(RaylibTest CXX)
+project(Mazegame CXX)
 
 # 3. 设置C++标准（raylib支持C++11及以上，推荐20以兼容新特性）
 set(CMAKE_CXX_STANDARD 20)
