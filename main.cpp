@@ -40,7 +40,7 @@ void LoadMazeTextures() {
 int main() {
     // 初始化窗口（先临时设为320x320，后续根据迷宫尺寸调整）
     InitWindow(800, 600, "迷宫小游戏 - 基础任务1");
-    LoadMazeTextures(); // 加载资源
+    LoadMazeTextures();  // 加载资源
 
     while (!WindowShouldClose()) {
         BeginDrawing();
