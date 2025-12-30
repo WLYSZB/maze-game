@@ -17,7 +17,7 @@ include_directories(${RAYLIB_PATH}/include)
 link_directories(${RAYLIB_PATH}/lib)
 
 # 7. 添加可执行文件（指定源文件：main.cpp，即后续要写的测试代码）
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp "maze_game.h" "maze.cpp" "player.cpp" "timer.cpp" "utils.cpp")
 
 # 8. 链接raylib库和Windows系统依赖库（winmm.lib是raylib必需的系统库，避免链接错误）
 target_link_libraries(${PROJECT_NAME} 
