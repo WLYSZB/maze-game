@@ -68,7 +68,7 @@ template<> struct std::hash<Coordinate> {
     }
 };
 
-// Maze类：添加寻路算法实现
+// Maze类（完整寻路功能）
 class Maze {
 private:
     struct Tile {
@@ -81,30 +81,26 @@ private:
     Coordinate end_coord;
     int rows;
     int cols;
-    // 三种路径存储
     std::vector<Coordinate> dfs_path;
     std::vector<Coordinate> bfs_path;
     std::vector<Coordinate> dijkstra_path;
     PathType current_path_type = PathType::NONE;
 
-    // 检查坐标是否可通行（排除墙和熔岩）
     bool is_valid(Coordinate c) const {
         return c.x >= 0 && c.x < cols && c.y >= 0 && c.y < rows
             && get_tile_type(c) != TileType::WALL
             && get_tile_type(c) != TileType::LAVA;
     }
 
-    // 获取四方向邻居
     std::vector<Coordinate> get_neighbors(Coordinate c) const {
         std::vector<Coordinate> neighbors;
-        if (is_valid({ c.x, c.y - 1 })) neighbors.push_back({ c.x, c.y - 1 }); // 上
-        if (is_valid({ c.x, c.y + 1 })) neighbors.push_back({ c.x, c.y + 1 }); // 下
-        if (is_valid({ c.x - 1, c.y })) neighbors.push_back({ c.x - 1, c.y }); // 左
-        if (is_valid({ c.x + 1, c.y })) neighbors.push_back({ c.x + 1, c.y }); // 右
+        if (is_valid({ c.x, c.y - 1 })) neighbors.push_back({ c.x, c.y - 1 });
+        if (is_valid({ c.x, c.y + 1 })) neighbors.push_back({ c.x, c.y + 1 });
+        if (is_valid({ c.x - 1, c.y })) neighbors.push_back({ c.x - 1, c.y });
+        if (is_valid({ c.x + 1, c.y })) neighbors.push_back({ c.x + 1, c.y });
         return neighbors;
     }
 
-    // 校验起点到终点是否有有效路径
     bool validate_maze_path() {
         std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
         std::queue<Coordinate> q;
@@ -126,7 +122,6 @@ private:
         return false;
     }
 
-    // DFS路径计算
     void compute_dfs_path() {
         std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
         std::stack<std::pair<Coordinate, std::vector<Coordinate>>> s;
@@ -155,7 +150,6 @@ private:
         }
     }
 
-    // BFS路径计算
     void compute_bfs_path() {
         std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
         std::vector<std::vector<Coordinate>> prev(rows, std::vector<Coordinate>(cols, { -1, -1 }));
@@ -177,7 +171,6 @@ private:
             }
         }
 
-        // 回溯路径
         Coordinate curr = end_coord;
         while (curr.x != -1 && curr.y != -1) {
             bfs_path.push_back(curr);
@@ -186,7 +179,6 @@ private:
         std::reverse(bfs_path.begin(), bfs_path.end());
     }
 
-    // Dijkstra路径计算
     int get_tile_cost(TileType type) const {
         return (type == TileType::GRASS) ? 3 : 1;
     }
@@ -220,7 +212,6 @@ private:
             }
         }
 
-        // 回溯路径
         Coordinate curr = end_coord;
         while (curr.x != -1 && curr.y != -1) {
             dijkstra_path.push_back(curr);
@@ -229,7 +220,6 @@ private:
         std::reverse(dijkstra_path.begin(), dijkstra_path.end());
     }
 
-    // 加载所有地块纹理
     void load_textures() {
         Image img_end = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/end.png");
         textures[TileType::END] = LoadTextureFromImage(img_end);
@@ -256,7 +246,6 @@ private:
         UnloadImage(img_lava);
     }
 
-    // 从文件加载迷宫数据
     void load_maze(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file.is_open()) {
@@ -288,20 +277,17 @@ private:
         }
         file.close();
 
-        // 计算三种路径
         compute_dfs_path();
         compute_bfs_path();
         compute_dijkstra_path();
     }
 
 public:
-    // 从文件加载迷宫
     Maze(const std::string& filepath) {
         load_textures();
         load_maze(filepath);
     }
 
-    // 随机生成迷宫（预留接口）
     Maze(int rows, int cols) {
         load_textures();
         this->rows = rows;
@@ -314,12 +300,10 @@ public:
         }
     }
 
-    // 设置当前显示的路径类型
     void set_current_path(PathType type) {
         current_path_type = type;
     }
 
-    // 绘制路径标记
     void draw_path_marker(Coordinate c, Color color) const {
         Vector2 pos = get_tile_position(c);
         DrawRectangle(
@@ -330,39 +314,35 @@ public:
         );
     }
 
-    // 绘制迷宫+路径
     void draw(const Camera2D& camera) {
         BeginMode2D(camera);
-        // 绘制所有地块
         for (const auto& row : tiles) {
             for (const auto& tile : row) {
                 DrawTextureV(textures[tile.type], tile.position, WHITE);
             }
         }
-        // 绘制选中的路径
         switch (current_path_type) {
         case PathType::DFS:
             for (const auto& c : dfs_path) {
-                draw_path_marker(c, Color{ 255, 0, 0, 150 }); // 红色
+                draw_path_marker(c, Color{ 255, 0, 0, 150 });
             }
             break;
         case PathType::BFS:
             for (const auto& c : bfs_path) {
-                draw_path_marker(c, Color{ 0, 0, 255, 150 }); // 蓝色
+                draw_path_marker(c, Color{ 0, 0, 255, 150 });
             }
             break;
         case PathType::DIJKSTRA:
             for (const auto& c : dijkstra_path) {
-                draw_path_marker(c, Color{ 0, 255, 0, 150 }); // 绿色
+                draw_path_marker(c, Color{ 0, 255, 0, 150 });
             }
             break;
-        default: // NONE
+        default:
             break;
         }
         EndMode2D();
     }
 
-    // 公共接口
     Coordinate get_start_coord() const { return start_coord; }
     Coordinate get_end_coord() const { return end_coord; }
     TileType get_tile_type(const Coordinate& coord) const {
@@ -381,19 +361,184 @@ public:
     int get_cols() const { return cols; }
 };
 
-// Player类框架（未实现核心功能）
+// Player类：实现移动、碰撞检测、状态管理
+enum class PlayerState {
+    STANDING,
+    DOWN,
+    LEFT,
+    RIGHT,
+    UP
+};
+
+const float PLAYER_SPEED = 200.0f;
+const float PLAYER_FRAME_TIME = 0.1f;
+
 class Player {
 private:
+    Texture2D texture;
+    Vector2 position;
+    Coordinate curr_coor;
+    Vector2 target_position;
+    Rectangle curr_frame_rectangle;
+    int curr_frame;
+    float timer;
+    float speed;
+    PlayerState state;
     const Maze& maze;
+    bool is_win;
+    int walk_score;
+    bool is_dead;
+
+    // 确定当前动画帧
+    void determine_frame_rectangle() {
+        timer += GetFrameTime();
+        if (timer >= PLAYER_FRAME_TIME) {
+            timer = 0;
+            curr_frame = (curr_frame + 1) % 3;
+        }
+        int frame_width = texture.width / 3;
+        int frame_height = texture.height / 4;
+        int state_row = static_cast<int>(state) - 1;
+        curr_frame_rectangle = {
+            static_cast<float>(curr_frame * frame_width),
+            static_cast<float>(state_row * frame_height),
+            static_cast<float>(frame_width),
+            static_cast<float>(frame_height)
+        };
+    }
+
+    // 切换玩家状态（方向）
+    void turn(PlayerState new_state) {
+        state = new_state;
+        curr_frame = 0;
+        timer = 0;
+    }
+
+    // 移动更新（平滑移动到目标位置）
+    void walk_update() {
+        Vector2 direction = Vector2Subtract(target_position, position);
+        float distance = Vector2Length(direction);
+        if (distance > 2) {
+            direction = Vector2Normalize(direction);
+            position = Vector2Add(position, Vector2Scale(direction, speed * GetFrameTime()));
+        }
+        else {
+            position = target_position;
+            curr_coor = {
+                static_cast<int>(round(position.x / TILE_WIDTH)),
+                static_cast<int>(round(position.y / TILE_HEIGHT))
+            };
+            state = PlayerState::STANDING;
+
+            // 检测熔岩/终点
+            TileType current_tile = maze.get_tile_type(curr_coor);
+            if (current_tile == TileType::LAVA) {
+                is_dead = true;
+            }
+            else {
+                int step_cost = (current_tile == TileType::GRASS) ? 3 : 1;
+                walk_score += step_cost;
+            }
+
+            // 检测是否到达终点
+            Coordinate end_coor = maze.get_end_coord();
+            if (curr_coor.x == end_coor.x && curr_coor.y == end_coor.y) {
+                is_win = true;
+            }
+        }
+    }
+
+    // 键盘控制
+    void control_update() {
+        if (is_win || is_dead || state != PlayerState::STANDING) return;
+
+        Coordinate target_coor = curr_coor;
+        if (IsKeyDown(KEY_DOWN)) {
+            target_coor.y += 1;
+            if (maze.get_tile_type(target_coor) != TileType::WALL) {
+                turn(PlayerState::DOWN);
+                target_position = maze.get_tile_position(target_coor);
+            }
+        }
+        else if (IsKeyDown(KEY_LEFT)) {
+            target_coor.x -= 1;
+            if (maze.get_tile_type(target_coor) != TileType::WALL) {
+                turn(PlayerState::LEFT);
+                target_position = maze.get_tile_position(target_coor);
+            }
+        }
+        else if (IsKeyDown(KEY_RIGHT)) {
+            target_coor.x += 1;
+            if (maze.get_tile_type(target_coor) != TileType::WALL) {
+                turn(PlayerState::RIGHT);
+                target_position = maze.get_tile_position(target_coor);
+            }
+        }
+        else if (IsKeyDown(KEY_UP)) {
+            target_coor.y -= 1;
+            if (maze.get_tile_type(target_coor) != TileType::WALL) {
+                turn(PlayerState::UP);
+                target_position = maze.get_tile_position(target_coor);
+            }
+        }
+    }
+
 public:
-    Player(const Maze& maze_ref) : maze(maze_ref) {}
-    ~Player() {}
-    void update() {}
-    void draw(const Camera2D& camera) {}
-    int get_score() const { return 0; }
-    bool is_win_state() const { return false; }
-    bool is_dead_state() const { return false; }
-    void reset() {}
+    Player(const Maze& maze_ref) : maze(maze_ref), is_win(false), is_dead(false), walk_score(0) {
+        // 加载玩家纹理
+        Image img_player = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/character.png");
+        texture = LoadTextureFromImage(img_player);
+        UnloadImage(img_player);
+
+        // 初始化位置和状态
+        curr_coor = maze.get_start_coord();
+        position = maze.get_tile_position(curr_coor);
+        target_position = position;
+        speed = PLAYER_SPEED;
+        state = PlayerState::STANDING;
+        curr_frame = 0;
+        timer = 0;
+
+        int frame_width = texture.width / 3;
+        int frame_height = texture.height / 4;
+        curr_frame_rectangle = { 0, 0, static_cast<float>(frame_width), static_cast<float>(frame_height) };
+    }
+
+    ~Player() {
+        UnloadTexture(texture);
+    }
+
+    // 更新玩家状态
+    void update() {
+        control_update();
+        if (state != PlayerState::STANDING) {
+            determine_frame_rectangle();
+            walk_update();
+        }
+    }
+
+    // 绘制玩家
+    void draw(const Camera2D& camera) {
+        BeginMode2D(camera);
+        DrawTextureRec(texture, curr_frame_rectangle, position, WHITE);
+        EndMode2D();
+    }
+
+    // 公共接口
+    int get_score() const { return walk_score; }
+    bool is_win_state() const { return is_win; }
+    bool is_dead_state() const { return is_dead; }
+    void reset() {
+        is_win = false;
+        is_dead = false;
+        walk_score = 0;
+        curr_coor = maze.get_start_coord();
+        position = maze.get_tile_position(curr_coor);
+        target_position = position;
+        state = PlayerState::STANDING;
+        curr_frame = 0;
+        timer = 0;
+    }
 };
 
 // 相机初始化
@@ -408,7 +553,7 @@ Camera2D init_camera(int maze_cols, int maze_rows) {
     return camera;
 }
 
-// 主函数：添加路径显示控制
+// 主函数：添加玩家更新和游戏结束检测
 int main() {
     InitWindow(1280, 720, "Maze Game");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -421,7 +566,6 @@ int main() {
     std::string current_maze_path;
 
     while (!WindowShouldClose()) {
-        // 菜单状态
         if (current_state == GameState::MENU) {
             if (IsKeyPressed(KEY_SPACE)) {
                 current_maze_path = "D:/数据结构/迷宫小游戏/实验3/assets/maze0.txt";
@@ -437,32 +581,41 @@ int main() {
                 break;
             }
         }
-        // 随机迷宫选择（占位）
         else if (current_state == GameState::RANDOM_MAZE_SELECT) {
             if (IsKeyPressed(KEY_ESCAPE)) {
                 current_state = GameState::MENU;
             }
         }
-        // 游戏进行中：添加路径控制
         else if (current_state == GameState::GAME_PLAYING) {
-            // 路径显示控制
-            if (IsKeyPressed(KEY_ZERO)) {
-                maze->set_current_path(PathType::NONE);
+            // 路径控制
+            if (IsKeyPressed(KEY_ZERO)) maze->set_current_path(PathType::NONE);
+            else if (IsKeyPressed(KEY_ONE)) maze->set_current_path(PathType::DFS);
+            else if (IsKeyPressed(KEY_TWO)) maze->set_current_path(PathType::BFS);
+            else if (IsKeyPressed(KEY_THREE)) maze->set_current_path(PathType::DIJKSTRA);
+
+            // 玩家更新
+            if (!player->is_win_state() && !player->is_dead_state()) {
+                player->update();
             }
-            else if (IsKeyPressed(KEY_ONE)) {
-                maze->set_current_path(PathType::DFS);
-            }
-            else if (IsKeyPressed(KEY_TWO)) {
-                maze->set_current_path(PathType::BFS);
-            }
-            else if (IsKeyPressed(KEY_THREE)) {
-                maze->set_current_path(PathType::DIJKSTRA);
+            else {
+                // 游戏结束
+                current_state = GameState::GAME_OVER;
             }
 
             if (IsKeyPressed(KEY_M)) {
                 current_state = GameState::MENU;
                 maze.reset();
                 player.reset();
+            }
+        }
+        else if (current_state == GameState::GAME_OVER) {
+            // 游戏结束界面（暂未实现选项）
+            if (IsKeyPressed(KEY_ENTER)) {
+                player->reset();
+                current_state = GameState::GAME_PLAYING;
+            }
+            else if (IsKeyPressed(KEY_ESCAPE)) {
+                break;
             }
         }
 
@@ -478,9 +631,18 @@ int main() {
         }
         else if (current_state == GameState::GAME_PLAYING) {
             maze->draw(camera);
-            DrawText("FPS: {}", GetScreenWidth() - 100, 5, 20, BLACK);
-            DrawText("0: Hide Path | 1: DFS | 2: BFS | 3: Dijkstra", 5, 5, 20, BLACK);
-            DrawText("Press M to return to Menu", 5, 25, 20, BLACK);
+            player->draw(camera);
+            DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 20, BLACK);
+            DrawText(("Cost: " + std::to_string(player->get_score())).c_str(), 5, 25, 20, BLACK);
+            DrawText("0: Hide Path | 1: DFS | 2: BFS | 3: Dijkstra", 5, 45, 20, BLACK);
+            DrawText("Use arrow keys to move", 5, 65, 20, BLACK);
+            DrawText("Press M to return to Menu", 5, 85, 20, BLACK);
+        }
+        else if (current_state == GameState::GAME_OVER) {
+            std::string result = player->is_win_state() ? "YOU WIN!" : "YOU DIED!";
+            DrawText(result.c_str(), GetScreenWidth() / 2 - MeasureText(result.c_str(), 60) / 2, 200, 60, player->is_win_state() ? YELLOW : RED);
+            DrawText(("Total Cost: " + std::to_string(player->get_score())).c_str(), GetScreenWidth() / 2 - MeasureText(("Total Cost: " + std::to_string(player->get_score())).c_str(), 30) / 2, 300, 30, BLACK);
+            DrawText("Press ENTER to replay | ESC to exit", GetScreenWidth() / 2 - MeasureText("Press ENTER to replay | ESC to exit", 25) / 2, 350, 25, BLACK);
         }
 
         EndDrawing();
