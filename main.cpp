@@ -239,27 +239,27 @@ private:
 
     void load_textures() {
         // 加载所有地块纹理
-        Image img_end = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/end.png");
+        Image img_end = LoadImage("D:/数据结构/迷宫小游戏/1/assets/end.png");
         textures[TileType::END] = LoadTextureFromImage(img_end);
         UnloadImage(img_end);
 
-        Image img_start = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/start.png");
+        Image img_start = LoadImage("D:/数据结构/迷宫小游戏/1/assets/start.png");
         textures[TileType::START] = LoadTextureFromImage(img_start);
         UnloadImage(img_start);
 
-        Image img_floor = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/floor.png");
+        Image img_floor = LoadImage("D:/数据结构/迷宫小游戏/1/assets/floor.png");
         textures[TileType::FLOOR] = LoadTextureFromImage(img_floor);
         UnloadImage(img_floor);
 
-        Image img_wall = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/wall.png");
+        Image img_wall = LoadImage("D:/数据结构/迷宫小游戏/1/assets/wall.png");
         textures[TileType::WALL] = LoadTextureFromImage(img_wall);
         UnloadImage(img_wall);
 
-        Image img_grass = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/grass.png");
+        Image img_grass = LoadImage("D:/数据结构/迷宫小游戏/1/assets/grass.png");
         textures[TileType::GRASS] = LoadTextureFromImage(img_grass);
         UnloadImage(img_grass);
 
-        Image img_lava = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/lava.png");
+        Image img_lava = LoadImage("D:/数据结构/迷宫小游戏/1/assets/lava.png");
         textures[TileType::LAVA] = LoadTextureFromImage(img_lava);
         UnloadImage(img_lava);
     }
@@ -654,7 +654,7 @@ public:
         is_dead = false;
 
         // 加载玩家纹理
-        Image img_player = LoadImage("D:/数据结构/迷宫小游戏/实验3/assets/character.png");
+        Image img_player = LoadImage("D:/数据结构/迷宫小游戏/1/assets/character.png");
         texture = LoadTextureFromImage(img_player);
         UnloadImage(img_player);
 
@@ -803,7 +803,7 @@ int main() {
         if (current_state == GameState::MENU) {
             if (IsKeyPressed(KEY_SPACE)) {
                 // 加载自定义迷宫
-                current_maze_path = "D:/数据结构/迷宫小游戏/实验3/assets/maze0.txt";
+                current_maze_path = "D:/数据结构/迷宫小游戏/1/assets/maze0.txt";
                 maze = std::make_unique<Maze>(current_maze_path);
                 player = std::make_unique<Player>(*maze);
                 game_timer.reset();
