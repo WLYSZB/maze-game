@@ -5,6 +5,12 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <cmath>
+#include <stack>
+#include <queue>
+#include <tuple>
+#include <algorithm>
+#include <climits>
 #include <memory>
 #include "raymath.h"
 
@@ -62,7 +68,7 @@ template<> struct std::hash<Coordinate> {
     }
 };
 
-// Maze类：实现基础框架+解析+绘制
+// Maze类：添加寻路算法实现
 class Maze {
 private:
     struct Tile {
@@ -75,7 +81,153 @@ private:
     Coordinate end_coord;
     int rows;
     int cols;
+    // 三种路径存储
+    std::vector<Coordinate> dfs_path;
+    std::vector<Coordinate> bfs_path;
+    std::vector<Coordinate> dijkstra_path;
     PathType current_path_type = PathType::NONE;
+
+    // 检查坐标是否可通行（排除墙和熔岩）
+    bool is_valid(Coordinate c) const {
+        return c.x >= 0 && c.x < cols && c.y >= 0 && c.y < rows
+            && get_tile_type(c) != TileType::WALL
+            && get_tile_type(c) != TileType::LAVA;
+    }
+
+    // 获取四方向邻居
+    std::vector<Coordinate> get_neighbors(Coordinate c) const {
+        std::vector<Coordinate> neighbors;
+        if (is_valid({ c.x, c.y - 1 })) neighbors.push_back({ c.x, c.y - 1 }); // 上
+        if (is_valid({ c.x, c.y + 1 })) neighbors.push_back({ c.x, c.y + 1 }); // 下
+        if (is_valid({ c.x - 1, c.y })) neighbors.push_back({ c.x - 1, c.y }); // 左
+        if (is_valid({ c.x + 1, c.y })) neighbors.push_back({ c.x + 1, c.y }); // 右
+        return neighbors;
+    }
+
+    // 校验起点到终点是否有有效路径
+    bool validate_maze_path() {
+        std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+        std::queue<Coordinate> q;
+        q.push(start_coord);
+        visited[start_coord.y][start_coord.x] = true;
+
+        while (!q.empty()) {
+            Coordinate curr = q.front();
+            q.pop();
+            if (curr == end_coord) return true;
+
+            for (auto& neighbor : get_neighbors(curr)) {
+                if (!visited[neighbor.y][neighbor.x]) {
+                    visited[neighbor.y][neighbor.x] = true;
+                    q.push(neighbor);
+                }
+            }
+        }
+        return false;
+    }
+
+    // DFS路径计算
+    void compute_dfs_path() {
+        std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+        std::stack<std::pair<Coordinate, std::vector<Coordinate>>> s;
+        s.push({ start_coord, {start_coord} });
+
+        while (!s.empty()) {
+            auto [curr, path] = s.top();
+            s.pop();
+
+            if (curr == end_coord) {
+                dfs_path = path;
+                return;
+            }
+            if (visited[curr.y][curr.x]) continue;
+            visited[curr.y][curr.x] = true;
+
+            auto neighbors = get_neighbors(curr);
+            std::reverse(neighbors.begin(), neighbors.end());
+            for (auto& neighbor : neighbors) {
+                if (!visited[neighbor.y][neighbor.x]) {
+                    std::vector<Coordinate> new_path = path;
+                    new_path.push_back(neighbor);
+                    s.push({ neighbor, new_path });
+                }
+            }
+        }
+    }
+
+    // BFS路径计算
+    void compute_bfs_path() {
+        std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+        std::vector<std::vector<Coordinate>> prev(rows, std::vector<Coordinate>(cols, { -1, -1 }));
+        std::queue<Coordinate> q;
+        q.push(start_coord);
+        visited[start_coord.y][start_coord.x] = true;
+
+        while (!q.empty()) {
+            Coordinate curr = q.front();
+            q.pop();
+            if (curr == end_coord) break;
+
+            for (auto& neighbor : get_neighbors(curr)) {
+                if (!visited[neighbor.y][neighbor.x]) {
+                    visited[neighbor.y][neighbor.x] = true;
+                    prev[neighbor.y][neighbor.x] = curr;
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        // 回溯路径
+        Coordinate curr = end_coord;
+        while (curr.x != -1 && curr.y != -1) {
+            bfs_path.push_back(curr);
+            curr = prev[curr.y][curr.x];
+        }
+        std::reverse(bfs_path.begin(), bfs_path.end());
+    }
+
+    // Dijkstra路径计算
+    int get_tile_cost(TileType type) const {
+        return (type == TileType::GRASS) ? 3 : 1;
+    }
+
+    void compute_dijkstra_path() {
+        const int INF = INT_MAX;
+        std::vector<std::vector<int>> dist(rows, std::vector<int>(cols, INF));
+        std::vector<std::vector<Coordinate>> prev(rows, std::vector<Coordinate>(cols, { -1, -1 }));
+        using PriorityNode = std::tuple<int, int, int>;
+        std::priority_queue<PriorityNode, std::vector<PriorityNode>, std::greater<>> pq;
+
+        dist[start_coord.y][start_coord.x] = 0;
+        pq.emplace(0, start_coord.x, start_coord.y);
+
+        while (!pq.empty()) {
+            auto [cost, x, y] = pq.top();
+            pq.pop();
+            Coordinate curr = { x, y };
+
+            if (curr == end_coord) break;
+            if (cost > dist[y][x]) continue;
+
+            for (auto& neighbor : get_neighbors(curr)) {
+                int nx = neighbor.x, ny = neighbor.y;
+                int new_cost = cost + get_tile_cost(get_tile_type(neighbor));
+                if (new_cost < dist[ny][nx]) {
+                    dist[ny][nx] = new_cost;
+                    prev[ny][nx] = curr;
+                    pq.emplace(new_cost, nx, ny);
+                }
+            }
+        }
+
+        // 回溯路径
+        Coordinate curr = end_coord;
+        while (curr.x != -1 && curr.y != -1) {
+            dijkstra_path.push_back(curr);
+            curr = prev[curr.y][curr.x];
+        }
+        std::reverse(dijkstra_path.begin(), dijkstra_path.end());
+    }
 
     // 加载所有地块纹理
     void load_textures() {
@@ -135,6 +287,11 @@ private:
             }
         }
         file.close();
+
+        // 计算三种路径
+        compute_dfs_path();
+        compute_bfs_path();
+        compute_dijkstra_path();
     }
 
 public:
@@ -144,7 +301,7 @@ public:
         load_maze(filepath);
     }
 
-    // 随机生成迷宫（预留接口，暂未实现）
+    // 随机生成迷宫（预留接口）
     Maze(int rows, int cols) {
         load_textures();
         this->rows = rows;
@@ -152,18 +309,28 @@ public:
     }
 
     ~Maze() {
-        // 释放纹理资源
         for (auto& pair : textures) {
             UnloadTexture(pair.second);
         }
     }
 
-    // 设置当前显示的路径类型（预留接口）
+    // 设置当前显示的路径类型
     void set_current_path(PathType type) {
         current_path_type = type;
     }
 
-    // 绘制迷宫地块（基础绘制，无路径显示）
+    // 绘制路径标记
+    void draw_path_marker(Coordinate c, Color color) const {
+        Vector2 pos = get_tile_position(c);
+        DrawRectangle(
+            static_cast<int>(pos.x + TILE_WIDTH / 2 - 8),
+            static_cast<int>(pos.y + TILE_HEIGHT / 2 - 8),
+            16, 16,
+            color
+        );
+    }
+
+    // 绘制迷宫+路径
     void draw(const Camera2D& camera) {
         BeginMode2D(camera);
         // 绘制所有地块
@@ -171,6 +338,26 @@ public:
             for (const auto& tile : row) {
                 DrawTextureV(textures[tile.type], tile.position, WHITE);
             }
+        }
+        // 绘制选中的路径
+        switch (current_path_type) {
+        case PathType::DFS:
+            for (const auto& c : dfs_path) {
+                draw_path_marker(c, Color{ 255, 0, 0, 150 }); // 红色
+            }
+            break;
+        case PathType::BFS:
+            for (const auto& c : bfs_path) {
+                draw_path_marker(c, Color{ 0, 0, 255, 150 }); // 蓝色
+            }
+            break;
+        case PathType::DIJKSTRA:
+            for (const auto& c : dijkstra_path) {
+                draw_path_marker(c, Color{ 0, 255, 0, 150 }); // 绿色
+            }
+            break;
+        default: // NONE
+            break;
         }
         EndMode2D();
     }
@@ -209,20 +396,19 @@ public:
     void reset() {}
 };
 
-// 相机初始化（适配迷宫尺寸）
+// 相机初始化
 Camera2D init_camera(int maze_cols, int maze_rows) {
     Camera2D camera = { 0 };
     camera.target = { (float)(maze_cols * TILE_WIDTH) / 2, (float)(maze_rows * TILE_HEIGHT) / 2 };
     camera.offset = { (float)GetScreenWidth() / 2, (float)GetScreenHeight() / 2 };
     camera.rotation = 0.0f;
-    // 自动计算缩放比例
     float scale_x = (float)GetScreenWidth() / (maze_cols * TILE_WIDTH);
     float scale_y = (float)GetScreenHeight() / (maze_rows * TILE_HEIGHT);
     camera.zoom = std::min(scale_x, scale_y) * 0.8f;
     return camera;
 }
 
-// 主函数：完善菜单跳转逻辑
+// 主函数：添加路径显示控制
 int main() {
     InitWindow(1280, 720, "Maze Game");
     SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -238,7 +424,6 @@ int main() {
         // 菜单状态
         if (current_state == GameState::MENU) {
             if (IsKeyPressed(KEY_SPACE)) {
-                // 加载自定义迷宫
                 current_maze_path = "D:/数据结构/迷宫小游戏/实验3/assets/maze0.txt";
                 maze = std::make_unique<Maze>(current_maze_path);
                 player = std::make_unique<Player>(*maze);
@@ -252,14 +437,28 @@ int main() {
                 break;
             }
         }
-        // 随机迷宫选择（仅占位，未实现）
+        // 随机迷宫选择（占位）
         else if (current_state == GameState::RANDOM_MAZE_SELECT) {
             if (IsKeyPressed(KEY_ESCAPE)) {
                 current_state = GameState::MENU;
             }
         }
-        // 游戏进行中（仅绘制迷宫）
+        // 游戏进行中：添加路径控制
         else if (current_state == GameState::GAME_PLAYING) {
+            // 路径显示控制
+            if (IsKeyPressed(KEY_ZERO)) {
+                maze->set_current_path(PathType::NONE);
+            }
+            else if (IsKeyPressed(KEY_ONE)) {
+                maze->set_current_path(PathType::DFS);
+            }
+            else if (IsKeyPressed(KEY_TWO)) {
+                maze->set_current_path(PathType::BFS);
+            }
+            else if (IsKeyPressed(KEY_THREE)) {
+                maze->set_current_path(PathType::DIJKSTRA);
+            }
+
             if (IsKeyPressed(KEY_M)) {
                 current_state = GameState::MENU;
                 maze.reset();
@@ -279,7 +478,8 @@ int main() {
         }
         else if (current_state == GameState::GAME_PLAYING) {
             maze->draw(camera);
-            DrawText("Game Playing (Maze Loaded)", 5, 5, 20, BLACK);
+            DrawText("FPS: {}", GetScreenWidth() - 100, 5, 20, BLACK);
+            DrawText("0: Hide Path | 1: DFS | 2: BFS | 3: Dijkstra", 5, 5, 20, BLACK);
             DrawText("Press M to return to Menu", 5, 25, 20, BLACK);
         }
 
