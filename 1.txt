@@ -1,0 +1,60 @@
+* commit 76d2882b421d7137c9ab4fa17a8315f37dd6a33e
+| Author: 礼阳 王 <1977494996@qq.com>
+| Date:   Tue Dec 30 19:17:30 2025 +0800
+| 
+|     修改资源路径Bug
+| 
+* commit 4cc37ff498edabc1f4df5259a139fdb778ef5c46
+| Author: 礼阳 王 <1977494996@qq.com>
+| Date:   Tue Dec 30 18:32:06 2025 +0800
+| 
+|     整合功能，优化交互逻辑，UI界面
+| 
+* commit 44c7dc89445f093a6c9781fdc3168d345378b3b8
+| Author: 夏 <3393671496@qq.com>
+| Date:   Tue Dec 30 17:47:13 2025 +0800
+| 
+|     实现 Player 类的移动、碰撞检测、状态管理，添加玩家纹理加载和分数计算
+| 
+* commit bf032d9bcadb011f2c14d7f5fe236a456aea21ae
+| Author: 家豪 罗 <1446599360@qq.com>
+| Date:   Tue Dec 30 17:45:02 2025 +0800
+| 
+|     实现 DFS、BFS、Dijkstra 三种寻路算法，添加路径校验和路径存储功能
+|     cpp
+| 
+* commit a57c37fcadec4ec881676e4e55012df471606519
+| Author: 礼阳 王 <1977494996@qq.com>
+| Date:   Tue Dec 30 17:41:24 2025 +0800
+| 
+|     实现 Maze 类的纹理加载、迷宫文件解析、基础地块绘制功能
+| 
+* commit 6b647807433ed40cc770ca8b5f30d6ac7655380a
+| Author: 礼阳 王 <1977494996@qq.com>
+| Date:   Tue Dec 30 17:40:46 2025 +0800
+| 
+|     搭建基础工程框架，定义核心枚举、结构体和类的空框架，初始化窗口环境
+|   
+| * commit 7acd655cfef9feacfd32aa3d4de141b68291e38a
+|/  Author: 礼阳 王 <1977494996@qq.com>
+|   Date:   Tue Dec 30 17:11:47 2025 +0800
+|   
+|       参考工程
+| 
+* commit c6778fd89a1ff42a371d55ecc4b21f4019c4d078
+| Author: 礼阳 王 <1977494996@qq.com>
+| Date:   Tue Dec 30 17:06:54 2025 +0800
+| 
+|     CMakelists.txt配置,raylib测试
+| 
+* commit 511113b4489b9e6366b98535bab760287d2c2844
+| Author: 19774 <19774@LIANGYOU>
+| Date:   Mon Dec 29 16:22:58 2025 +0800
+| 
+|     添加项目文件。
+| 
+* commit f3ef381421077b84a6566421c0d2582d36b3733a
+  Author: 19774 <19774@LIANGYOU>
+  Date:   Mon Dec 29 16:22:57 2025 +0800
+  
+      添加 .gitattributes、.gitignore 和 README.md。
